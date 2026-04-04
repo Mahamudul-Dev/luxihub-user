@@ -4,6 +4,8 @@ import 'package:luxihub_user/features/onboarding/presentation/pages/splash_page.
 import 'package:luxihub_user/features/service_providers/presentation/pages/service_provider_list_page.dart';
 
 import '../../features/authentication/presentation/pages/login_page.dart';
+import '../../features/authentication/presentation/pages/signup_page.dart';
+import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../widgets/error_view.dart';
 
@@ -25,10 +27,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const OnboardingPage(),
     ),
     GoRoute(path: AppRoutes.login.path, name: AppRoutes.login.name, builder: (context, state) => const LoginPage()),
+    GoRoute(path: AppRoutes.signup.path, name: AppRoutes.signup.name, builder: (context, state) => const SignupPage()),
     GoRoute(
       name: AppRoutes.home.name,
       path: AppRoutes.home.path,
-      builder: (context, state) => const ServiceProviderListPage(),
+      builder: (context, state) =>  HomePage(),
     ),
   ],
 );
