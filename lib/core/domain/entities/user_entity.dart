@@ -5,6 +5,10 @@ class UserEntity {
   final String email;
   final String phone;
   final String address;
+  final String profileImageUrl;
+  final String bio;
+  final String city;
+  final String country;
   final bool tocAccepted;
 
   const UserEntity({
@@ -14,6 +18,12 @@ class UserEntity {
     required this.email,
     required this.phone,
     required this.address,
+    required this.profileImageUrl,
+    required this.bio,
+    required this.city,
+    required this.country,
     required this.tocAccepted,
   });
+
+  String get fullName => '$firstName $lastName'.trim();
 }

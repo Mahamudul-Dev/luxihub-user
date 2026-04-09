@@ -6,6 +6,7 @@ class AppRoutes {
   static const RouteModel home = RouteModel(name: 'Home', path: '/');
   static const RouteModel login = RouteModel(name: 'Login', path: '/login');
   static const RouteModel signup = RouteModel(name: 'Signup', path: '/signup');
+  static const RouteModel serviceProviderProfile = RouteModel(name: 'ServiceProviderProfile', path: '/provider/:id');
 }
 
 class RouteModel {

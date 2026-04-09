@@ -8,6 +8,10 @@ class UserModel extends UserEntity {
     required super.email,
     required super.phone,
     required super.address,
+    required super.profileImageUrl,
+    required super.bio,
+    required super.city,
+    required super.country,
     required super.tocAccepted,
   });
 
@@ -19,6 +23,10 @@ class UserModel extends UserEntity {
       email: json['email'] as String,
       phone: json['phone'] as String,
       address: json['address'] as String,
+      profileImageUrl: json['profileImageUrl'] as String? ?? '',
+      bio: json['bio'] as String? ?? '',
+      city: json['city'] as String? ?? '',
+      country: json['country'] as String? ?? '',
       tocAccepted: json['tocAccepted'] as bool,
     );
   }
@@ -31,6 +39,10 @@ class UserModel extends UserEntity {
       'email': email,
       'phone': phone,
       'address': address,
+      'profileImageUrl': profileImageUrl,
+      'bio': bio,
+      'city': city,
+      'country': country,
       'tocAccepted': tocAccepted,
     };
   }
@@ -42,6 +54,10 @@ class UserModel extends UserEntity {
     String? email,
     String? phone,
     String? address,
+    String? profileImageUrl,
+    String? bio,
+    String? city,
+    String? country,
     bool? tocAccepted,
   }) {
     return UserModel(
@@ -51,6 +67,10 @@ class UserModel extends UserEntity {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       address: address ?? this.address,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      bio: bio ?? this.bio,
+      city: city ?? this.city,
+      country: country ?? this.country,
       tocAccepted: tocAccepted ?? this.tocAccepted,
     );
   }

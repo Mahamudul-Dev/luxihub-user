@@ -19,7 +19,12 @@ class _SplashPageState extends State<SplashPage> {
   void initState() {
     super.initState();
     Timer(const Duration(seconds: 3), () {
-      if (mounted) context.goNamed(AppRoutes.onboarding.name);
+      if (mounted) {
+        // DEV: skipping onboarding & auth — go straight to home.
+        // TODO: restore for production ↓
+        // context.goNamed(AppRoutes.onboarding.name);
+        context.goNamed(AppRoutes.home.name);
+      }
     });
   }
 

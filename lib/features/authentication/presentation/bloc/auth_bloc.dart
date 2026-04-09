@@ -35,6 +35,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       email: event.email,
       phone: '',
       address: '',
+      profileImageUrl: '',
+      bio: '',
+      city: '',
+      country: '',
       tocAccepted: true,
     );
 
@@ -61,6 +65,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       email: event.email,
       phone: event.phone,
       address: event.address,
+      profileImageUrl: '',
+      bio: '',
+      city: '',
+      country: '',
       tocAccepted: event.tocAccepted,
     );
 
