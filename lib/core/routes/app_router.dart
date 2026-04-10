@@ -15,6 +15,8 @@ import '../../features/home/presentation/bloc/home_bloc.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/service_providers/presentation/pages/service_provider_profile_page.dart';
+import '../../features/job_request/presentation/pages/job_request_details_page.dart';
+import '../../features/rating_review/presentation/pages/rating_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
 import '../widgets/error_view.dart';
 
@@ -100,6 +102,22 @@ GoRouter createRouter(AuthBloc authBloc) {
         builder: (context, state) {
           final provider = state.extra as ServiceProviderEntity;
           return ServiceProviderProfilePage(provider: provider);
+        },
+      ),
+      GoRoute(
+        name: AppRoutes.jobRequestDetails.name,
+        path: AppRoutes.jobRequestDetails.path,
+        builder: (context, state) {
+          final provider = state.extra as ServiceProviderEntity;
+          return JobRequestDetailsPage(provider: provider);
+        },
+      ),
+      GoRoute(
+        name: AppRoutes.rating.name,
+        path: AppRoutes.rating.path,
+        builder: (context, state) {
+          final provider = state.extra as ServiceProviderEntity;
+          return RatingPage(provider: provider);
         },
       ),
       GoRoute(

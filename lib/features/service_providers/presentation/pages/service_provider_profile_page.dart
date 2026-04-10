@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:go_router/go_router.dart';
+
 import '../../../../core/config/utils.dart';
 import '../../../../core/domain/entities/service_provider_entity.dart';
 import '../../../../core/dummy/dummy.dart';
+import '../../../../core/routes/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/review_card_widget.dart';
 import '../widgets/booking_status_sheet.dart';
@@ -15,12 +18,16 @@ class ServiceProviderProfilePage extends StatelessWidget {
 
   final ServiceProviderEntity provider;
 
-  void _showBookingSuccess(BuildContext context) {
-    showModalBottomSheet(
+  Future<void> _showBookingSuccess(BuildContext context) async {
+    await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isDismissible: false,
       builder: (_) => BookingSuccessSheet(providerName: provider.fullName),
     );
+    if (context.mounted) {
+      context.goNamed(AppRoutes.jobRequestDetails.name, extra: provider);
+    }
   }
 
   @override
