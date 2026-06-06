@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/routes/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -43,9 +44,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return BlocProvider(
       create: (_) => OnboardingBloc(),
       child: BlocConsumer<OnboardingBloc, OnboardingState>(
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is OnboardingCompleted) {
-            context.goNamed(AppRoutes.login.name);
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('onboarding_seen', true);
+            if (context.mounted) context.goNamed(AppRoutes.login.name);
           } else if (state is OnboardingProgress) {
             _animateToPage(state.currentPage);
           }

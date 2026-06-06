@@ -251,28 +251,28 @@ class HomeSearchBar extends StatelessWidget {
             ),
 
             // Filter button
-            if (showFilterButton) ...[
-              const SizedBox(width: 4),
-              Tooltip(
-                message: filterTooltip,
-                child: IconButton(
-                  onPressed: onFilterTap,
-                  icon: filterActive
-                      ? (filterActiveIcon ??
-                          Icon(Icons.filter_list, color: activeColor))
-                      : (filterIcon ??
-                          Icon(
-                            Icons.filter_list,
-                            color: Theme.of(context).primaryColor,
-                          )),
-                  style: filterActive
-                      ? IconButton.styleFrom(
-                          backgroundColor: activeColor.withAlpha(20),
-                        )
-                      : null,
-                ),
-              ),
-            ],
+            // if (showFilterButton) ...[
+            //   const SizedBox(width: 4),
+            //   Tooltip(
+            //     message: filterTooltip,
+            //     child: IconButton(
+            //       onPressed: onFilterTap,
+            //       icon: filterActive
+            //           ? (filterActiveIcon ??
+            //               Icon(Icons.filter_list, color: activeColor))
+            //           : (filterIcon ??
+            //               Icon(
+            //                 Icons.filter_list,
+            //                 color: Theme.of(context).primaryColor,
+            //               )),
+            //       style: filterActive
+            //           ? IconButton.styleFrom(
+            //               backgroundColor: activeColor.withAlpha(20),
+            //             )
+            //           : null,
+            //     ),
+            //   ),
+            // ],
           ],
         ),
       ],

@@ -47,6 +47,10 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>LuxiHub needs your location to connect you with nearby service providers.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>LuxiHub needs your location to connect you with nearby service providers.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

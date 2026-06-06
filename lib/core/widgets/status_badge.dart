@@ -4,7 +4,6 @@ import '../config/utils.dart';
 import '../enum/job_request_enum.dart';
 import '../theme/app_colors.dart';
 
-
 class StatusBadge extends StatelessWidget {
   const StatusBadge({super.key, required this.status});
 
@@ -13,9 +12,14 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
-      JobRequestStatus.waiting => ('Waiting for response', Colors.amber),
+      JobRequestStatus.pending => ('Waiting for response', Colors.amber),
       JobRequestStatus.accepted => ('Accepted', AppColors.primary),
       JobRequestStatus.rejected => ('Rejected', AppColors.error),
+      JobRequestStatus.awaitingPaymentConfirmation =>
+        ('Awaiting Payment', Colors.orange),
+      JobRequestStatus.awaitingOfflineConfirmation =>
+        ('Cash Pending', Colors.blueGrey),
+      JobRequestStatus.completed => ('Completed', Colors.green),
     };
 
     return Container(

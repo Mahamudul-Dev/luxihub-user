@@ -17,11 +17,12 @@ final class HomeLoading extends HomeState {
 
 final class HomeLoaded extends HomeState {
   final List<ServiceProviderEntity> providers;
+  final List<CategoryEntity> categories;
 
-  const HomeLoaded(this.providers);
+  const HomeLoaded({required this.providers, required this.categories});
 
   @override
-  List<Object> get props => [providers];
+  List<Object> get props => [providers, categories];
 }
 
 final class HomeError extends HomeState {

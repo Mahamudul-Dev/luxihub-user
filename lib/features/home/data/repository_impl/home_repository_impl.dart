@@ -1,16 +1,17 @@
+import '../../../../core/domain/entities/category_entity.dart';
 import '../../../../core/domain/entities/service_provider_entity.dart';
-import '../../../../core/dummy/dummy.dart';
 import '../../domain/repository/i_home_repository.dart';
+import '../datasources/home_remote_datasource.dart';
 
 class HomeRepositoryImpl implements IHomeRepository {
-  const HomeRepositoryImpl();
+  final HomeRemoteDataSource _dataSource;
+  const HomeRepositoryImpl(this._dataSource);
 
   @override
-  Future<List<ServiceProviderEntity>> getServiceProviders({
-    int limit = 10,
-  }) async {
-    // TODO: replace with real remote/local data source call
-    await Future.delayed(const Duration(milliseconds: 500));
-    return Dummy.providers.take(limit).toList();
-  }
+  Future<List<ServiceProviderEntity>> getServiceProviders({int limit = 10}) =>
+      _dataSource.getServiceProviders(limit: limit);
+
+  @override
+  Future<List<CategoryEntity>> getCategories() =>
+      _dataSource.getCategories();
 }

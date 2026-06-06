@@ -1,7 +1,26 @@
 {
   "permissions": {
     "allow": [
-      "Bash(flutter pub:*)"
+      "Bash(flutter pub:*)",
+      "Bash(del \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\lib\\\\features\\\\authentication\\\\domain\\\\entities\\\\app_user.dart\")",
+      "Bash(flutter analyze *)",
+      "Bash(mkdir -p \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\supabase\\\\functions\\\\create-payment-intent\")",
+      "Bash(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\supabase\\\\functions\\\\stripe-webhook\")",
+      "Bash(Out-Null)",
+      "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\lib\\\\features\\\\notifications\\\\domain\\\\repositories\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\lib\\\\features\\\\notifications\\\\domain\\\\usecases\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\lib\\\\features\\\\notifications\\\\data\\\\datasources\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\lib\\\\features\\\\notifications\\\\data\\\\models\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\lib\\\\features\\\\notifications\\\\data\\\\repositories\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\lib\\\\features\\\\notifications\\\\presentation\\\\bloc\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\supabase\\\\functions\\\\send-notification\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\supabase\\\\functions\\\\push-notification\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\supabase\\\\functions\\\\_shared\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\supabase\\\\functions\\\\send-chat-notification\")",
+      "Bash(Test-Path \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\android\\\\app\\\\google-services.json\")"
+    ],
+    "additionalDirectories": [
+      "e:\\Projects\\flutter-projects\\luxihub-user\\supabase\\functions"
     ]
   }
 }

@@ -7,39 +7,74 @@ sealed class AuthEvent extends Equatable {
   List<Object> get props => [];
 }
 
-final class LoginSubmitted extends AuthEvent {
+final class AuthCheckRequested extends AuthEvent {
+  const AuthCheckRequested();
+}
+
+final class SendPhoneOtpRequested extends AuthEvent {
+  final String phone;
+  const SendPhoneOtpRequested(this.phone);
+
+  @override
+  List<Object> get props => [phone];
+}
+
+final class VerifyPhoneOtpRequested extends AuthEvent {
+  final String phone;
+  final String token;
+  const VerifyPhoneOtpRequested({required this.phone, required this.token});
+
+  @override
+  List<Object> get props => [phone, token];
+}
+
+final class SignInWithEmailRequested extends AuthEvent {
   final String email;
   final String password;
-
-  const LoginSubmitted({required this.email, required this.password});
+  const SignInWithEmailRequested({required this.email, required this.password});
 
   @override
   List<Object> get props => [email, password];
 }
 
-final class SignupSubmitted extends AuthEvent {
-  final String firstName;
-  final String lastName;
+final class SignUpWithEmailRequested extends AuthEvent {
   final String email;
-  final String phone;
-  final String address;
   final String password;
-  final bool tocAccepted;
-
-  const SignupSubmitted({
-    required this.firstName,
-    required this.lastName,
+  final String name;
+  final String phone;
+  const SignUpWithEmailRequested({
     required this.email,
-    required this.phone,
-    required this.address,
     required this.password,
-    required this.tocAccepted,
+    required this.name,
+    required this.phone,
   });
 
   @override
-  List<Object> get props => [firstName, lastName, email, phone, address, password, tocAccepted];
+  List<Object> get props => [email, password, name, phone];
 }
 
-final class LogoutRequested extends AuthEvent {
-  const LogoutRequested();
+final class AuthSignOutRequested extends AuthEvent {
+  const AuthSignOutRequested();
+}
+
+final class ResendConfirmationRequested extends AuthEvent {
+  final String email;
+  const ResendConfirmationRequested(this.email);
+
+  @override
+  List<Object> get props => [email];
+}
+
+// Internal — dispatched by the Supabase auth stream, never by the UI.
+final class _SupabaseSessionChanged extends AuthEvent {
+  final String? userId;
+  final String? email;
+  final String? phone;
+  final bool isSignedIn;
+  const _SupabaseSessionChanged({
+    required this.isSignedIn,
+    this.userId,
+    this.email,
+    this.phone,
+  });
 }

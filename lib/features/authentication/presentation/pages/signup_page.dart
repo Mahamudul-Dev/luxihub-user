@@ -39,6 +39,32 @@ class _SignupPageState extends State<SignupPage> {
     super.dispose();
   }
 
+  void _showTerms(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Terms & Conditions'),
+        content: const SingleChildScrollView(
+          child: Text(
+            'By using LuxiHub, you agree to the following:\n\n'
+            '1. You will use the platform solely to request home services.\n\n'
+            '2. You are responsible for providing accurate job descriptions.\n\n'
+            '3. Payments are processed securely and are non-refundable once a job is completed.\n\n'
+            '4. LuxiHub acts as an intermediary and is not liable for the quality of services provided by independent handymen.\n\n'
+            '5. Your personal data is handled in accordance with our Privacy Policy.\n\n'
+            '6. We reserve the right to suspend accounts that violate these terms.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     if (!_tocAccepted) {
@@ -50,14 +76,11 @@ class _SignupPageState extends State<SignupPage> {
       );
       return;
     }
-    context.read<AuthBloc>().add(SignupSubmitted(
-          firstName: _firstNameController.text.trim(),
-          lastName: _lastNameController.text.trim(),
+    context.read<AuthBloc>().add(SignUpWithEmailRequested(
           email: _emailController.text.trim(),
-          phone: _phoneController.text.trim(),
-          address: _addressController.text.trim(),
           password: _passwordController.text,
-          tocAccepted: _tocAccepted,
+          name: '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'.trim(),
+          phone: _phoneController.text.trim(),
         ));
   }
 
@@ -193,7 +216,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       const Text('I accept the terms and conditions'),
                       TextButton(
-                        onPressed: isLoading ? null : () {},
+                        onPressed: isLoading ? null : () => _showTerms(context),
                         child: const Text('View Terms'),
                       ),
                     ],

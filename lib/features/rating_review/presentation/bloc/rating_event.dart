@@ -40,5 +40,10 @@ final class RatingCommentChanged extends RatingEvent {
 }
 
 final class RatingSubmitted extends RatingEvent {
-  const RatingSubmitted();
+  final String jobId;
+  final String providerId;
+  const RatingSubmitted({required this.jobId, required this.providerId});
+
+  @override
+  List<Object> get props => [jobId, providerId];
 }

@@ -9,7 +9,7 @@ class ServiceProviderEntity {
   final String category;        // e.g. "Plumbing", "Painting", "Carpentry"
   final List<String> skills;    // e.g. ["Pipe fitting", "Leak repair"]
   final double ratePerHour;
-  final String currency;        // e.g. "£", "$", "€"
+  final String currency;        // e.g. "£"
   final int yearsOfExperience;
   final bool isAvailable;
 

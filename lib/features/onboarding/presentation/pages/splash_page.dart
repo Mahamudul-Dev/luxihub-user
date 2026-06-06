@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/config/assets.dart';
 import '../../../../core/routes/app_router.dart';
@@ -18,14 +19,22 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        // DEV: skipping onboarding & auth — go straight to home.
-        // TODO: restore for production ↓
-        // context.goNamed(AppRoutes.onboarding.name);
-        context.goNamed(AppRoutes.home.name);
-      }
-    });
+    _navigate();
+  }
+
+  Future<void> _navigate() async {
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool('onboarding_seen') ?? false;
+
+    if (!mounted) return;
+    if (seen) {
+      context.goNamed(AppRoutes.login.name);
+    } else {
+      context.goNamed(AppRoutes.onboarding.name);
+    }
   }
 
   @override

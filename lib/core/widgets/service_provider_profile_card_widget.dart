@@ -45,7 +45,7 @@ class ServiceProviderProfileCardWidget extends StatelessWidget {
   /// Full display name of the service provider.
   final String name;
 
-  /// Rate string shown at the bottom, e.g. "20£/hour" or "\$35/hr".
+  /// Rate string shown at the bottom, e.g. "£20/hour".
   final String serviceRate;
 
   // ── Photo ─────────────────────────────────────────────────────────────────

@@ -15,20 +15,34 @@ final class AuthLoading extends AuthState {
   const AuthLoading();
 }
 
-final class AuthAuthenticated extends AuthState {
-  final UserModel user;
+final class AuthOtpSent extends AuthState {
+  final String phone;
+  const AuthOtpSent(this.phone);
 
+  @override
+  List<Object?> get props => [phone];
+}
+
+final class AuthAuthenticated extends AuthState {
+  final AppUser user;
   const AuthAuthenticated(this.user);
 
   @override
   List<Object?> get props => [user];
 }
 
+final class AuthUnauthenticated extends AuthState {
+  const AuthUnauthenticated();
+}
+
 final class AuthFailure extends AuthState {
   final String message;
-
   const AuthFailure(this.message);
 
   @override
   List<Object?> get props => [message];
+}
+
+final class AuthConfirmationEmailSent extends AuthState {
+  const AuthConfirmationEmailSent();
 }

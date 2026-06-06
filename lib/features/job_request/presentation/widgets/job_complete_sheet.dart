@@ -3,23 +3,15 @@ import 'package:flutter/material.dart';
 import '../../../../core/config/utils.dart';
 import '../../../../core/theme/app_colors.dart';
 
-class JobCompleteSheet extends StatefulWidget {
-  const JobCompleteSheet({super.key, required this.providerName});
+class JobCompleteSheet extends StatelessWidget {
+  const JobCompleteSheet({
+    super.key,
+    required this.providerName,
+    required this.onRate,
+  });
 
   final String providerName;
-
-  @override
-  State<JobCompleteSheet> createState() => _JobCompleteSheetState();
-}
-
-class _JobCompleteSheetState extends State<JobCompleteSheet> {
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) Navigator.of(context).pop();
-    });
-  }
+  final VoidCallback onRate;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +30,6 @@ class _JobCompleteSheetState extends State<JobCompleteSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Drag handle
           Container(
             width: 40,
             height: 4,
@@ -48,23 +39,16 @@ class _JobCompleteSheetState extends State<JobCompleteSheet> {
             ),
           ),
           const SizedBox(height: Utils.defaultPadding * 1.5),
-
-          // Thank you icon
           Container(
             padding: const EdgeInsets.all(Utils.defaultPadding),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.favorite_rounded,
-              color: Colors.white,
-              size: 48,
-            ),
+            child: const Icon(Icons.favorite_rounded,
+                color: Colors.white, size: 48),
           ),
           const SizedBox(height: Utils.defaultPadding),
-
-          // Title
           Text(
             'Thank You!',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -73,16 +57,33 @@ class _JobCompleteSheetState extends State<JobCompleteSheet> {
                 ),
           ),
           const SizedBox(height: Utils.defaultPadding / 2),
-
-          // Subtitle
           Text(
-            'We hope ${widget.providerName} did a great job. Your feedback helps others find the best service providers.',
+            'We hope $providerName did a great job.\nYour feedback helps others find the best providers.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.white.withValues(alpha: 0.85),
                 ),
           ),
           const SizedBox(height: Utils.defaultPadding * 2),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onRate,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(Utils.defaultBorderRadius),
+                ),
+                padding: const EdgeInsets.symmetric(
+                    vertical: Utils.defaultPadding),
+              ),
+              child: const Text('Rate Now',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+          const SizedBox(height: Utils.defaultPadding),
         ],
       ),
     );
