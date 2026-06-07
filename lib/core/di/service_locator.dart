@@ -50,6 +50,13 @@ import '../../features/profile/domain/repositories/profile_repository.dart';
 import '../../features/profile/domain/usecases/get_profile.dart';
 import '../../features/profile/domain/usecases/update_profile.dart';
 import '../../features/profile/domain/usecases/upload_avatar.dart';
+import '../../features/saved_providers/data/datasources/saved_providers_datasource.dart';
+import '../../features/saved_providers/data/repositories/saved_providers_repository_impl.dart';
+import '../../features/saved_providers/domain/repositories/saved_providers_repository.dart';
+import '../../features/saved_providers/domain/usecases/get_saved_provider_ids.dart';
+import '../../features/saved_providers/domain/usecases/get_saved_providers.dart';
+import '../../features/saved_providers/domain/usecases/save_provider.dart';
+import '../../features/saved_providers/domain/usecases/unsave_provider.dart';
 
 final sl = GetIt.instance;
 
@@ -149,4 +156,16 @@ void setupServiceLocator() {
   sl.registerLazySingleton(() => GetProfile(sl()));
   sl.registerLazySingleton(() => UpdateProfile(sl()));
   sl.registerLazySingleton(() => UploadAvatar(sl()));
+
+  // ── Saved Providers ───────────────────────────────────────────────────────
+  sl.registerLazySingleton<SavedProvidersDatasource>(
+    () => SavedProvidersDatasourceImpl(sl()),
+  );
+  sl.registerLazySingleton<SavedProvidersRepository>(
+    () => SavedProvidersRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton(() => GetSavedProviderIds(sl()));
+  sl.registerLazySingleton(() => GetSavedProviders(sl()));
+  sl.registerLazySingleton(() => SaveProvider(sl()));
+  sl.registerLazySingleton(() => UnsaveProvider(sl()));
 }

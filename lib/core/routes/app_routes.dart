@@ -18,6 +18,7 @@ class AppRoutes {
   static const RouteModel serviceProviderList = RouteModel(name: 'ServiceProviderList', path: '/providers');
   static const RouteModel notifications = RouteModel(name: 'Notifications', path: '/notifications');
   static const RouteModel providerReviews = RouteModel(name: 'ProviderReviews', path: '/provider/:id/reviews');
+  static const RouteModel savedProviders = RouteModel(name: 'SavedProviders', path: '/saved');
 }
 
 class RouteModel {

@@ -38,6 +38,11 @@ class ScaffoldWithNavBar extends StatelessWidget {
             label: 'Inbox',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.favorite_outline_rounded),
+            activeIcon: Icon(Icons.favorite_rounded),
+            label: 'Saved',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
             label: 'Profile',

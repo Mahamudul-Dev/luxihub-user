@@ -14,4 +14,5 @@ abstract interface class ChatRepository {
     required String senderId,
     required String text,
   });
+  Future<void> markAsRead(String conversationId);
 }

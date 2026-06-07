@@ -17,7 +17,11 @@
       "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\supabase\\\\functions\\\\push-notification\")",
       "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\supabase\\\\functions\\\\_shared\")",
       "PowerShell(New-Item -ItemType Directory -Force \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\supabase\\\\functions\\\\send-chat-notification\")",
-      "Bash(Test-Path \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\android\\\\app\\\\google-services.json\")"
+      "Bash(Test-Path \"e:\\\\Projects\\\\flutter-projects\\\\luxihub-user\\\\android\\\\app\\\\google-services.json\")",
+      "PowerShell($json = Get-Content \"C:\\\\Users\\\\maham\\\\Downloads\\\\luxihub-uk-firebase-adminsdk-fbsvc-9379220a72.json\" -Raw; [Convert]::ToBase64String\\([System.Text.Encoding]::UTF8.GetBytes\\($json\\)\\) | Set-Clipboard; Write-Host \"Copied to clipboard! Length: $\\([Convert]::ToBase64String\\([System.Text.Encoding]::UTF8.GetBytes\\($json\\)\\).Length\\) chars\")",
+      "Bash(Get-ChildItem -Path \"e:\\\\Projects\\\\flutter-projects\\\\luxihub_handyman\\\\lib\\\\features\\\\chat\" -Recurse -File)",
+      "Bash(Select-Object FullName)",
+      "Bash(flutter build *)"
     ],
     "additionalDirectories": [
       "e:\\Projects\\flutter-projects\\luxihub-user\\supabase\\functions"

@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/di/service_locator.dart';
 import '../../../../core/routes/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../authentication/presentation/bloc/auth_bloc.dart';
+import '../../../saved_providers/domain/usecases/get_saved_provider_ids.dart';
+import '../../../saved_providers/domain/usecases/save_provider.dart';
+import '../../../saved_providers/domain/usecases/unsave_provider.dart';
 import '../bloc/service_provider_bloc.dart';
 import '../widgets/service_provider_widget.dart';
 
@@ -32,12 +37,13 @@ class ServiceProviderListPage extends StatefulWidget {
 
 class _ServiceProviderListPageState extends State<ServiceProviderListPage> {
   late final TextEditingController _searchController;
-  final Set<String> _favouriteIds = {};
+  Set<String> _favouriteIds = {};
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialSearchText);
+    _loadSavedIds();
   }
 
   @override
@@ -46,13 +52,42 @@ class _ServiceProviderListPageState extends State<ServiceProviderListPage> {
     super.dispose();
   }
 
+  Future<void> _loadSavedIds() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return;
+    try {
+      final ids = await sl<GetSavedProviderIds>()(authState.user.id);
+      if (mounted) setState(() => _favouriteIds = ids);
+    } catch (_) {}
+  }
+
+  Future<void> _toggleSave(String providerId, bool isSaved) async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return;
+    final uid = authState.user.id;
+    setState(() {
+      isSaved ? _favouriteIds.remove(providerId) : _favouriteIds.add(providerId);
+    });
+    try {
+      if (isSaved) {
+        await sl<UnsaveProvider>()(uid, providerId);
+      } else {
+        await sl<SaveProvider>()(uid, providerId);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          isSaved ? _favouriteIds.add(providerId) : _favouriteIds.remove(providerId);
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Service Providers'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
       ),
       body: BlocBuilder<ServiceProviderBloc, ServiceProviderState>(
         builder: (context, state) {
@@ -94,12 +129,9 @@ class _ServiceProviderListPageState extends State<ServiceProviderListPage> {
               ),
 
               // Category chips
-              if (state is ServiceProviderLoaded)
+              if (state is ServiceProviderLoaded && state.categories.isNotEmpty)
                 _CategoryChips(
-                  categories: (state.allProviders.map((p) => p.category).toSet()
-                        ..remove(''))
-                      .toList()
-                    ..sort(),
+                  categories: state.categories,
                   selectedCategory: state.selectedCategory,
                   onSelected: (cat) => context
                       .read<ServiceProviderBloc>()
@@ -158,9 +190,7 @@ class _ServiceProviderListPageState extends State<ServiceProviderListPage> {
             return ServiceProviderWidget(
               provider: provider,
               isFavourite: isFav,
-              onFavouriteTap: () => setState(() => isFav
-                  ? _favouriteIds.remove(provider.id)
-                  : _favouriteIds.add(provider.id)),
+              onFavouriteTap: () => _toggleSave(provider.id, isFav),
               onTap: () => context.pushNamed(
                 AppRoutes.serviceProviderProfile.name,
                 pathParameters: {'id': provider.id},

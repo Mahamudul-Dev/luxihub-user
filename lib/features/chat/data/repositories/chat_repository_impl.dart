@@ -38,4 +38,8 @@ class ChatRepositoryImpl implements ChatRepository {
         senderId: senderId,
         text: text,
       );
+
+  @override
+  Future<void> markAsRead(String conversationId) =>
+      _dataSource.markAsRead(conversationId);
 }

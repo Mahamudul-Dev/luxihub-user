@@ -1,13 +1,81 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/di/service_locator.dart';
 import '../../../../core/domain/entities/conversation.dart';
+import '../../../../core/domain/entities/message.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../authentication/presentation/bloc/auth_bloc.dart';
 import '../../../home/data/models/service_provider_model.dart';
+import '../../domain/repositories/chat_repository.dart';
 import '../bloc/chat_bloc.dart';
+
+// ── Formatting helpers ────────────────────────────────────────────────────────
+
+String _formatTime(DateTime dt) {
+  final local = dt.toLocal();
+  final hour = local.hour == 0 ? 12 : (local.hour > 12 ? local.hour - 12 : local.hour);
+  final minute = local.minute.toString().padLeft(2, '0');
+  final period = local.hour < 12 ? 'AM' : 'PM';
+  return '$hour:$minute $period';
+}
+
+String _formatDateLabel(DateTime dt) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final yesterday = today.subtract(const Duration(days: 1));
+  final day = DateTime(dt.year, dt.month, dt.day);
+
+  if (day == today) return 'Today';
+  if (day == yesterday) return 'Yesterday';
+
+  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  final wd = weekdays[dt.weekday - 1];
+  final mo = months[dt.month - 1];
+  if (dt.year == now.year) return '$wd, ${dt.day} $mo';
+  return '$wd, ${dt.day} $mo ${dt.year}';
+}
+
+// ── List item union ───────────────────────────────────────────────────────────
+
+class _Item {
+  final Message? message;
+  final String? separator;
+  const _Item.msg(this.message) : separator = null;
+  const _Item.sep(this.separator) : message = null;
+  bool get isSep => separator != null;
+}
+
+// Build items chronologically with date separators, then reverse for
+// reverse:true ListView so newest message is at the bottom (index 0).
+List<_Item> _buildItems(List<Message> messages) {
+  // Always sort oldest→newest regardless of stream delivery order
+  final sorted = [...messages]
+    ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+  final items = <_Item>[];
+  DateTime? lastDate;
+
+  for (final msg in sorted) {
+    final dt = msg.createdAt.toLocal();
+    final date = DateTime(dt.year, dt.month, dt.day);
+    if (lastDate == null || date != lastDate) {
+      items.add(_Item.sep(_formatDateLabel(dt)));
+      lastDate = date;
+    }
+    items.add(_Item.msg(msg));
+  }
+
+  // Reverse so index 0 = newest → renders at bottom with reverse:true
+  return items.reversed.toList();
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 class ChatPage extends StatefulWidget {
   final Conversation conversation;
@@ -20,44 +88,54 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
-  bool _hasText = false;
   bool _loadingProfile = false;
 
   @override
   void initState() {
     super.initState();
     context.read<ChatBloc>().add(MessagesWatchStarted(widget.conversation.id));
-    _controller.addListener(() {
-      final hasText = _controller.text.trim().isNotEmpty;
-      if (hasText != _hasText) setState(() => _hasText = hasText);
+    // markAsRead runs outside the bloc because emit.forEach in MessagesWatchStarted
+    // holds the event queue open, so any queued event behind it never executes.
+    sl<ChatRepository>().markAsRead(widget.conversation.id).then((_) {
+      debugPrint('[MarkAsRead] SUCCESS for conv: ${widget.conversation.id}');
+    }).catchError((e) {
+      debugPrint('[MarkAsRead] FAILED: $e');
     });
   }
 
   @override
   void dispose() {
+    sl<ChatRepository>().markAsRead(widget.conversation.id);
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // With reverse:true, position 0 = bottom of the chat.
+  void _scrollToBottom({bool jump = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      if (jump) {
+        _scrollController.jumpTo(0);
+      } else {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   void _send() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     _controller.clear();
+    setState(() {});
     context.read<ChatBloc>().add(MessageSendRequested(
           conversationId: widget.conversation.id,
           text: text,
         ));
-  }
-
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
   }
 
   Future<void> _goToProviderProfile() async {
@@ -90,16 +168,71 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final uid = (context.read<AuthBloc>().state is AuthAuthenticated)
-        ? (context.read<AuthBloc>().state as AuthAuthenticated).user.id
-        : '';
+    final name = widget.conversation.providerName ?? 'Provider';
+    final avatar = widget.conversation.providerAvatarPath;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFECEFF1),
-      appBar: _AppBar(
-        conversation: widget.conversation,
-        loading: _loadingProfile,
-        onTapProfile: _goToProviderProfile,
+      backgroundColor: AppColors.surfaceBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        titleSpacing: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          color: AppColors.textPrimary,
+          onPressed: () => context.pop(),
+        ),
+        title: GestureDetector(
+          onTap: _goToProviderProfile,
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 18.r,
+                backgroundColor: AppColors.splashShapeColor,
+                backgroundImage: avatar?.isNotEmpty == true
+                    ? NetworkImage(avatar!)
+                    : null,
+                child: avatar?.isNotEmpty != true
+                    ? Text(
+                        name[0].toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      )
+                    : null,
+              ),
+              SizedBox(width: 10.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    'Tap to view profile',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+       
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.h),
+          child: Divider(height: 1.h, color: AppColors.divider),
+        ),
       ),
       body: Column(
         children: [
@@ -107,448 +240,306 @@ class _ChatPageState extends State<ChatPage> {
             child: BlocConsumer<ChatBloc, ChatState>(
               listener: (context, state) {
                 if (state is MessagesWatching) {
-                  WidgetsBinding.instance
-                      .addPostFrameCallback((_) => _scrollToBottom());
-                } else if (state is ChatError) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: AppColors.error,
-                  ));
+                  _scrollToBottom(jump: state.messages.length <= 1);
+                }
+                if (state is ChatError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
                 }
               },
               builder: (context, state) {
                 if (state is! MessagesWatching) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (state.messages.isEmpty) {
-                  return _EmptyState(
-                    name: widget.conversation.providerName ?? 'Provider',
+
+                final messages = state.messages;
+
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No messages yet. Say hello!',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: AppColors.textHint,
+                      ),
+                    ),
                   );
                 }
+
+                final uid =
+                    (context.read<AuthBloc>().state is AuthAuthenticated)
+                        ? (context.read<AuthBloc>().state as AuthAuthenticated)
+                            .user
+                            .id
+                        : '';
+
+                final items = _buildItems(messages);
+
                 return ListView.builder(
                   controller: _scrollController,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  itemCount: state.messages.length,
+                  reverse: true,
+                  padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
+                  itemCount: items.length,
                   itemBuilder: (context, index) {
-                    final msg = state.messages[index];
-                    final isMine = msg.senderId == uid;
-                    final showDate = index == 0 ||
-                        !_sameDay(
-                            state.messages[index - 1].createdAt, msg.createdAt);
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (showDate) _DateDivider(date: msg.createdAt),
-                        _MessageBubble(
-                          text: msg.text,
-                          isMine: isMine,
-                          time: _formatTime(msg.createdAt),
-                        ),
-                      ],
+                    final item = items[index];
+                    if (item.isSep) {
+                      return _DateSeparator(label: item.separator!);
+                    }
+                    final msg = item.message!;
+                    return _ChatBubble(
+                      text: msg.text,
+                      time: _formatTime(msg.createdAt),
+                      isSent: msg.senderId == uid,
+                      providerAvatar: avatar,
+                      providerInitial: name[0].toUpperCase(),
                     );
                   },
                 );
               },
             ),
           ),
-          _InputBar(
-            controller: _controller,
-            hasText: _hasText,
-            onSend: _send,
-          ),
-        ],
-      ),
-    );
-  }
 
-  String _formatTime(DateTime dt) {
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '$h:$m';
-  }
-
-  bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-}
-
-// ── AppBar ────────────────────────────────────────────────────────────────────
-
-class _AppBar extends StatelessWidget implements PreferredSizeWidget {
-  final Conversation conversation;
-  final bool loading;
-  final VoidCallback onTapProfile;
-
-  const _AppBar({
-    required this.conversation,
-    required this.loading,
-    required this.onTapProfile,
-  });
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 1);
-
-  @override
-  Widget build(BuildContext context) {
-    final name = conversation.providerName ?? 'Provider';
-    final avatar = conversation.providerAvatarPath;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          surfaceTintColor: Colors.transparent,
-          leadingWidth: 44,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-            color: AppColors.textPrimary,
-            onPressed: () => context.pop(),
-          ),
-          title: GestureDetector(
-            onTap: onTapProfile,
-            behavior: HitTestBehavior.opaque,
+          // ── Input bar ─────────────────────────────────────────────────────
+          Container(
+            padding: EdgeInsets.fromLTRB(16.w, 10.h, 12.w, 24.h),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              border: Border(
+                top: BorderSide(color: AppColors.divider, width: 1.h),
+              ),
+            ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Hero(
-                  tag: 'provider-avatar-${conversation.providerId}',
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundColor: AppColors.primaryLight.withValues(alpha: 0.2),
-                    backgroundImage: avatar?.isNotEmpty == true
-                        ? NetworkImage(avatar!)
-                        : null,
-                    child: avatar?.isNotEmpty != true
-                        ? Text(
-                            name[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          )
-                        : null,
+                Expanded(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: 120.h),
+                    child: TextField(
+                      controller: _controller,
+                      maxLines: null,
+                      textCapitalization: TextCapitalization.sentences,
+                      onChanged: (_) => setState(() {}),
+                      style: TextStyle(
+                          fontSize: 14.sp, color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        hintStyle: TextStyle(
+                            fontSize: 14.sp, color: AppColors.textHint),
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16.w, vertical: 10.h),
+                        filled: true,
+                        fillColor: AppColors.surfaceBackground,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(22.r),
+                          borderSide:
+                              const BorderSide(color: AppColors.inputBorder),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(22.r),
+                          borderSide:
+                              const BorderSide(color: AppColors.inputBorder),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(22.r),
+                          borderSide: const BorderSide(
+                              color: AppColors.primary, width: 1.5),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Text(
-                        'Tap to view profile',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
+                SizedBox(width: 8.w),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 44.r,
+                  height: 44.r,
+                  decoration: BoxDecoration(
+                    color: _controller.text.trim().isNotEmpty
+                        ? AppColors.primary
+                        : AppColors.divider,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: _controller.text.trim().isNotEmpty ? _send : null,
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      Icons.send_rounded,
+                      size: 20.r,
+                      color: _controller.text.trim().isNotEmpty
+                          ? AppColors.textOnPrimary
+                          : AppColors.textHint,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          actions: [
-            if (loading)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.primary,
-                  ),
-                ),
-              )
-            else
-              IconButton(
-                icon: const Icon(Icons.account_circle_outlined),
-                color: AppColors.textSecondary,
-                tooltip: 'View profile',
-                onPressed: onTapProfile,
-              ),
-          ],
-        ),
-        Container(height: 1, color: AppColors.divider),
-      ],
+        ],
+      ),
     );
   }
 }
 
-// ── Empty state ───────────────────────────────────────────────────────────────
+// ── Chat bubble ───────────────────────────────────────────────────────────────
 
-class _EmptyState extends StatelessWidget {
-  final String name;
-  const _EmptyState({required this.name});
+class _ChatBubble extends StatelessWidget {
+  final String text;
+  final String time;
+  final bool isSent;
+  final String? providerAvatar;
+  final String providerInitial;
+
+  const _ChatBubble({
+    required this.text,
+    required this.time,
+    required this.isSent,
+    required this.providerAvatar,
+    required this.providerInitial,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+    return Align(
+      alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
+      child: Row(
+        mainAxisAlignment:
+            isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isSent) ...[
+            CircleAvatar(
+              radius: 14.r,
+              backgroundColor: AppColors.splashShapeColor,
+              backgroundImage: providerAvatar?.isNotEmpty == true
+                  ? NetworkImage(providerAvatar!)
+                  : null,
+              child: providerAvatar?.isNotEmpty != true
+                  ? Text(
+                      providerInitial,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    )
+                  : null,
+            ),
+            SizedBox(width: 8.w),
+          ],
+          Flexible(
+            child: Container(
+              margin: EdgeInsets.only(bottom: 12.h),
+              padding:
+                  EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.sizeOf(context).width * 0.68,
               ),
-              child: const Icon(
-                Icons.chat_bubble_outline_rounded,
-                size: 36,
+              decoration: BoxDecoration(
+                color: isSent ? AppColors.primary : AppColors.background,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16.r),
+                  topRight: Radius.circular(16.r),
+                  bottomLeft:
+                      isSent ? Radius.circular(16.r) : Radius.circular(4.r),
+                  bottomRight:
+                      isSent ? Radius.circular(4.r) : Radius.circular(16.r),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment:
+                    isSent ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w400,
+                      height: 1.4,
+                      color: isSent
+                          ? AppColors.textOnPrimary
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    time,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: isSent
+                          ? AppColors.textOnPrimary.withValues(alpha: 0.65)
+                          : AppColors.textHint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isSent) ...[
+            SizedBox(width: 8.w),
+            CircleAvatar(
+              radius: 14.r,
+              backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+              child: Icon(
+                Icons.person_rounded,
+                size: 16.r,
                 color: AppColors.primary,
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Start a conversation',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Say hello to $name and describe what you need.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-            ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Date divider ──────────────────────────────────────────────────────────────
-
-class _DateDivider extends StatelessWidget {
-  final DateTime date;
-  const _DateDivider({required this.date});
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final String label;
-    if (date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day) {
-      label = 'Today';
-    } else if (date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day - 1) {
-      label = 'Yesterday';
-    } else {
-      label =
-          '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Row(
-        children: [
-          const Expanded(child: Divider(endIndent: 12)),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const Expanded(child: Divider(indent: 12)),
         ],
       ),
     );
   }
 }
 
-// ── Message bubble ────────────────────────────────────────────────────────────
+// ── Date separator ────────────────────────────────────────────────────────────
 
-class _MessageBubble extends StatelessWidget {
-  final String text;
-  final bool isMine;
-  final String time;
-
-  const _MessageBubble({
-    required this.text,
-    required this.isMine,
-    required this.time,
-  });
+class _DateSeparator extends StatelessWidget {
+  const _DateSeparator({required this.label});
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        top: 2,
-        bottom: 2,
-        left: isMine ? 60 : 0,
-        right: isMine ? 0 : 60,
-      ),
-      child: Align(
-        alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: isMine ? AppColors.primary : Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(18),
-              topRight: const Radius.circular(18),
-              bottomLeft: Radius.circular(isMine ? 18 : 4),
-              bottomRight: Radius.circular(isMine ? 4 : 18),
+      padding: EdgeInsets.symmetric(vertical: 16.h),
+      child: Row(
+        children: [
+          Expanded(
+              child: Divider(color: AppColors.divider, thickness: 1.h)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            child: Container(
+              padding:
+                  EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.textHint,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
-          child: Column(
-            crossAxisAlignment:
-                isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                text,
-                style: TextStyle(
-                  color: isMine ? Colors.white : AppColors.textPrimary,
-                  fontSize: 14.5,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                time,
-                style: TextStyle(
-                  color: isMine
-                      ? Colors.white.withValues(alpha: 0.65)
-                      : AppColors.textHint,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Input bar ─────────────────────────────────────────────────────────────────
-
-class _InputBar extends StatelessWidget {
-  final TextEditingController controller;
-  final bool hasText;
-  final VoidCallback onSend;
-
-  const _InputBar({
-    required this.controller,
-    required this.hasText,
-    required this.onSend,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F2F5),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: TextField(
-                    controller: controller,
-                    textInputAction: TextInputAction.newline,
-                    keyboardType: TextInputType.multiline,
-                    maxLines: 5,
-                    minLines: 1,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 15,
-                    ),
-                    decoration: const InputDecoration(
-                      hintText: 'Message...',
-                      hintStyle: TextStyle(
-                        color: AppColors.textHint,
-                        fontSize: 15,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: hasText ? AppColors.primary : const Color(0xFFDDE1E4),
-                  shape: BoxShape.circle,
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: hasText ? onSend : null,
-                    child: Icon(
-                      Icons.send_rounded,
-                      size: 20,
-                      color: hasText ? Colors.white : AppColors.textHint,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+          Expanded(
+              child: Divider(color: AppColors.divider, thickness: 1.h)),
+        ],
       ),
     );
   }

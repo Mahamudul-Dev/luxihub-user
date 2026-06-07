@@ -1,66 +1,87 @@
 import 'package:flutter/material.dart';
-import 'package:luxihub_user/core/config/utils.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import '../theme/app_colors.dart';
 
 class CategoryItemWidget extends StatelessWidget {
+  const CategoryItemWidget({
+    super.key,
+    required this.title,
+    required this.categoryImageUrl,
+    this.onTap,
+  });
+
   final String title;
   final String categoryImageUrl;
   final VoidCallback? onTap;
-  const CategoryItemWidget({super.key, required this.title, required this.categoryImageUrl, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 120,
-        margin: const EdgeInsets.only(right: 16),
+        width: 110.w,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          image: DecorationImage(
-            image: categoryImageUrl.startsWith('http')
-                ? NetworkImage(categoryImageUrl)
-                : AssetImage(categoryImageUrl) as ImageProvider,
-            fit: BoxFit.cover,
-          ),
+          borderRadius: BorderRadius.circular(14.r),
+          color: AppColors.splashShapeColor,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          image: categoryImageUrl.isNotEmpty
+              ? DecorationImage(
+                  image: categoryImageUrl.startsWith('http')
+                      ? NetworkImage(categoryImageUrl)
+                      : AssetImage(categoryImageUrl) as ImageProvider,
+                  fit: BoxFit.cover,
+                )
+              : null,
         ),
-        alignment: Alignment.bottomLeft,
         clipBehavior: Clip.hardEdge,
         child: Stack(
           children: [
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.7),
-                  ],
+            // Gradient overlay
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.65),
+                    ],
+                    stops: const [0.4, 1.0],
+                  ),
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: Utils.defaultPadding / 2, bottom: Utils.defaultPadding / 2),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        shadows: [
-                            Shadow(
-                              offset: const Offset(0, 1),
-                              blurRadius: 4,
-                              color: Colors.black.withOpacity(0.6),
-                            ),
-                          ],
-                        ),
-                  ),
-                ],
+
+            // Category label at bottom
+            Positioned(
+              left: 8.w,
+              right: 8.w,
+              bottom: 8.h,
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textOnPrimary,
+                  height: 1.3,
+                  shadows: const [
+                    Shadow(
+                      offset: Offset(0, 1),
+                      blurRadius: 4,
+                      color: Colors.black54,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

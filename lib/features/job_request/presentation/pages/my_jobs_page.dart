@@ -22,6 +22,10 @@ class _MyJobsPageState extends State<MyJobsPage> {
   @override
   void initState() {
     super.initState();
+    _fetch();
+  }
+
+  void _fetch() {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       context.read<JobRequestBloc>().add(MyJobsRequested(authState.user.id));
@@ -32,34 +36,45 @@ class _MyJobsPageState extends State<MyJobsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('My Jobs')),
-      body: BlocConsumer<JobRequestBloc, JobRequestState>(
-        listener: (context, state) {
-          if (state is JobRequestError) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.error,
-            ));
-          }
-        },
-        builder: (context, state) {
-          if (state is MyJobsLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state is MyJobsLoaded) {
-            if (state.jobs.isEmpty) {
-              return const Center(child: Text('No jobs yet.'));
+      body: RefreshIndicator(
+        onRefresh: () async => _fetch(),
+        color: AppColors.primary,
+        child: BlocConsumer<JobRequestBloc, JobRequestState>(
+          listener: (context, state) {
+            if (state is JobRequestError) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(state.message),
+                backgroundColor: AppColors.error,
+              ));
             }
-            return RefreshIndicator(
-              onRefresh: () async {
-                final authState = context.read<AuthBloc>().state;
-                if (authState is AuthAuthenticated) {
-                  context
-                      .read<JobRequestBloc>()
-                      .add(MyJobsRequested(authState.user.id));
-                }
-              },
-              child: ListView.separated(
+          },
+          builder: (context, state) {
+            if (state is MyJobsLoading) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: 300,
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+                ],
+              );
+            }
+
+            if (state is MyJobsLoaded) {
+              if (state.jobs.isEmpty) {
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: 300,
+                      child: const Center(child: Text('No jobs yet.')),
+                    ),
+                  ],
+                );
+              }
+              return ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(Utils.defaultPadding),
                 itemCount: state.jobs.length,
                 separatorBuilder: (_, _) =>
@@ -68,12 +83,14 @@ class _MyJobsPageState extends State<MyJobsPage> {
                   final job = state.jobs[index];
                   return _JobCard(job: job);
                 },
-              ),
-            );
-          }
+              );
+            }
 
-          return const SizedBox.shrink();
-        },
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+            );
+          },
+        ),
       ),
     );
   }

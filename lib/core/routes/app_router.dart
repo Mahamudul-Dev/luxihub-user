@@ -49,6 +49,7 @@ import '../../features/notifications/domain/usecases/mark_notification_read.dart
 import '../../features/notifications/presentation/bloc/notification_bloc.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/rating_review/presentation/pages/provider_reviews_page.dart';
+import '../../features/saved_providers/presentation/pages/saved_providers_page.dart';
 import '../../features/service_providers/presentation/bloc/service_provider_bloc.dart';
 import '../../features/service_providers/presentation/pages/service_provider_list_page.dart';
 import '../../features/service_providers/presentation/pages/service_provider_profile_page.dart';
@@ -241,6 +242,7 @@ GoRouter createRouter(AuthBloc authBloc) {
           return BlocProvider(
             create: (_) => ServiceProviderBloc(
               sl<GetServiceProvidersUseCase>(),
+              sl<GetCategoriesUseCase>(),
               initialQuery: args?.initialQuery ?? '',
               initialCategory: args?.initialCategory,
             )..add(const ServiceProviderFetchRequested()),
@@ -307,7 +309,16 @@ GoRouter createRouter(AuthBloc authBloc) {
             ),
           ]),
 
-          // Tab 3 — Profile
+          // Tab 3 — Saved Providers
+          StatefulShellBranch(routes: [
+            GoRoute(
+              name: AppRoutes.savedProviders.name,
+              path: AppRoutes.savedProviders.path,
+              builder: (context, state) => const SavedProvidersPage(),
+            ),
+          ]),
+
+          // Tab 4 — Profile
           StatefulShellBranch(routes: [
             GoRoute(
               name: AppRoutes.profile.name,

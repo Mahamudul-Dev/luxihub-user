@@ -1,48 +1,40 @@
-import { importPKCS8, SignJWT } from "https://deno.land/x/jose@v4.14.4/index.ts";
+import { JWT } from "npm:google-auth-library@9";
 
 export interface ServiceAccount {
   project_id: string;
   client_email: string;
   private_key: string;
+  [key: string]: unknown;
 }
 
 export function getServiceAccount(): ServiceAccount {
   const raw = Deno.env.get("FCM_SERVICE_ACCOUNT");
   if (!raw) throw new Error("FCM_SERVICE_ACCOUNT secret is not set.");
-  const json = new TextDecoder().decode(
-    Uint8Array.from(atob(raw), (c) => c.charCodeAt(0))
-  );
-  return JSON.parse(json) as ServiceAccount;
+  try {
+    const json = new TextDecoder().decode(
+      Uint8Array.from(atob(raw), (c) => c.charCodeAt(0))
+    );
+    const parsed = JSON.parse(json) as ServiceAccount;
+    console.log("[fcm] Service account loaded for:", parsed.client_email);
+    return parsed;
+  } catch (e) {
+    throw new Error(`Failed to decode FCM_SERVICE_ACCOUNT: ${e}`);
+  }
 }
 
 export async function getFcmAccessToken(account: ServiceAccount): Promise<string> {
-  const privateKey = await importPKCS8(account.private_key, "RS256");
-  const now = Math.floor(Date.now() / 1000);
-
-  const jwt = await new SignJWT({
-    scope: "https://www.googleapis.com/auth/firebase.messaging",
-  })
-    .setProtectedHeader({ alg: "RS256" })
-    .setIssuedAt(now)
-    .setExpirationTime(now + 3600)
-    .setIssuer(account.client_email)
-    .setAudience("https://oauth2.googleapis.com/token")
-    .sign(privateKey);
-
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth2:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
+  const auth = new JWT({
+    email: account.client_email,
+    key: account.private_key,
+    scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
   });
 
-  const data = await res.json();
-  if (!data.access_token) {
-    throw new Error(`OAuth2 token error: ${JSON.stringify(data)}`);
+  const tokenResponse = await auth.authorize();
+  if (!tokenResponse?.access_token) {
+    throw new Error("Google auth returned no access_token");
   }
-  return data.access_token as string;
+  console.log("[fcm] OAuth2 access token obtained");
+  return tokenResponse.access_token;
 }
 
 export async function sendFcmToToken(
@@ -83,9 +75,10 @@ export async function sendFcmToToken(
 
   if (!res.ok) {
     const err = await res.text();
-    console.warn(`FCM failed for token ${token.slice(0, 20)}…: ${err}`);
+    console.warn(`[fcm] FCM send failed for token …${token.slice(-10)}: ${err}`);
     return false;
   }
+  console.log(`[fcm] FCM sent to token …${token.slice(-10)}`);
   return true;
 }
 

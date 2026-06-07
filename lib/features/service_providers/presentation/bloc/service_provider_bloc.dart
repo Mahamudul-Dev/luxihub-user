@@ -1,7 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/domain/entities/category_entity.dart';
 import '../../../../core/domain/entities/service_provider_entity.dart';
+import '../../../home/domain/usecase/get_categories_usecase.dart';
 import '../../../home/domain/usecase/get_service_providers_usecase.dart';
 
 part 'service_provider_event.dart';
@@ -10,11 +12,13 @@ part 'service_provider_state.dart';
 class ServiceProviderBloc
     extends Bloc<ServiceProviderEvent, ServiceProviderState> {
   final GetServiceProvidersUseCase _getServiceProviders;
+  final GetCategoriesUseCase _getCategories;
   final String initialQuery;
   final String? initialCategory;
 
   ServiceProviderBloc(
-    this._getServiceProviders, {
+    this._getServiceProviders,
+    this._getCategories, {
     this.initialQuery = '',
     this.initialCategory,
   }) : super(ServiceProviderInitial()) {
@@ -29,12 +33,20 @@ class ServiceProviderBloc
   ) async {
     emit(ServiceProviderLoading());
     try {
-      final providers = await _getServiceProviders(limit: 100);
+      final results = await Future.wait([
+        _getServiceProviders(limit: 100),
+        _getCategories(),
+      ]);
+      final providers = results[0] as List<ServiceProviderEntity>;
+      final categoryNames = (results[1] as List<CategoryEntity>)
+          .map((c) => c.name)
+          .toList();
       final filtered =
           _filter(providers, query: initialQuery, category: initialCategory);
       emit(ServiceProviderLoaded(
         allProviders: providers,
         filteredProviders: filtered,
+        categories: categoryNames,
         selectedCategory: initialCategory,
         searchQuery: initialQuery,
       ));

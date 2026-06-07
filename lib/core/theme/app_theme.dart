@@ -29,8 +29,9 @@ class AppTheme {
 
       // ── AppBar ──────────────────────────────────────────────────────────
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textOnPrimary,
+      
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -41,9 +42,8 @@ class AppTheme {
         titleTextStyle: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
         ),
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        
       ),
 
       // ── ElevatedButton (primary pill button e.g. Login / Sign Up) ───────

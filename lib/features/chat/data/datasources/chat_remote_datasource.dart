@@ -19,6 +19,7 @@ abstract interface class ChatRemoteDataSource {
     required String senderId,
     required String text,
   });
+  Future<void> markAsRead(String conversationId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -106,6 +107,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           .single();
 
       return MessageModel.fromJson(row);
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  @override
+  Future<void> markAsRead(String conversationId) async {
+    try {
+      await _client
+          .from('conversations')
+          .update({'unread_count': 0})
+          .eq('id', conversationId);
     } catch (e) {
       throw ServerException(e.toString());
     }
