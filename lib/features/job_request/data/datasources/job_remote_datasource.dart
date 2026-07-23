@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/domain/entities/job_request.dart';
@@ -13,6 +14,7 @@ abstract interface class JobRemoteDataSource {
     required double clientLat,
     required double clientLng,
     double? offerPrice,
+    List<dynamic> attachments = const [],
   });
 
   Future<List<JobRequest>> getMyJobs(String clientId);
@@ -47,8 +49,10 @@ class JobRemoteDataSourceImpl implements JobRemoteDataSource {
     required double clientLat,
     required double clientLng,
     double? offerPrice,
+    List<dynamic> attachments = const [],
   }) async {
     try {
+      // Create job request
       final row = await _client
           .from('job_requests')
           .insert({
@@ -63,6 +67,28 @@ class JobRemoteDataSourceImpl implements JobRemoteDataSource {
           })
           .select('*, provider:provider_id(name, avatar_path, hourly_rate, stripe_account_id, reviews!reviews_provider_id_fkey(score))')
           .single();
+
+      final jobId = row['id'] as String;
+
+      // Upload attachments if any
+      if (attachments.isNotEmpty) {
+        for (int i = 0; i < attachments.length; i++) {
+          final file = attachments[i] as File;
+          final fileName = '${jobId}_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
+          final storagePath = 'job-attachments/$fileName';
+
+          // Upload to Supabase storage
+          await _client.storage
+              .from('job-attachments')
+              .upload(storagePath, file);
+
+          // Insert attachment record
+          await _client.from('job_attachments').insert({
+            'job_request_id': jobId,
+            'storage_path': storagePath,
+          });
+        }
+      }
 
       return JobRequestModel.fromJson(row);
     } catch (e) {

@@ -76,6 +76,7 @@ class JobRequestBloc extends Bloc<JobRequestEvent, JobRequestState> {
         clientLat: event.clientLat,
         clientLng: event.clientLng,
         offerPrice: event.offerPrice,
+        attachments: event.attachments,
       ));
       emit(JobRequestPosted(job));
     } catch (e) {

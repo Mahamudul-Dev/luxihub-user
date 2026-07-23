@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
           .eq("stripe_payment_intent_id", intent.id);
       }
 
-      // 2. Credit provider wallet (upsert to handle first-time wallet creation)
+      // 2. Credit provider wallet (FULL amount - fee taken during withdrawal)
       if (providerId && amount > 0) {
         const { data: wallet } = await supabase
           .from("wallet")
@@ -66,15 +66,17 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         const currentBalance = (wallet?.balance as number) ?? 0;
+        const newBalance = currentBalance + amount;
 
         await supabase
           .from("wallet")
           .upsert(
-            { id: providerId, balance: currentBalance + amount },
+            { id: providerId, balance: newBalance },
             { onConflict: "id" }
           );
 
-        console.log(`Credited provider ${providerId} wallet: +${amount} (new balance: ${currentBalance + amount})`);
+        console.log(`💰 Online Payment - Credited provider ${providerId} wallet: +€${amount} (new balance: €${newBalance})`);
+        console.log(`   ℹ️  Platform fee (10%) will be deducted during withdrawal`);
       }
     }
 

@@ -14,6 +14,7 @@ final class JobPostRequested extends JobRequestEvent {
   final double clientLat;
   final double clientLng;
   final double? offerPrice;
+  final List<dynamic> attachments;
 
   const JobPostRequested({
     required this.providerId,
@@ -22,11 +23,12 @@ final class JobPostRequested extends JobRequestEvent {
     this.clientLat = 0.0,
     this.clientLng = 0.0,
     this.offerPrice,
+    this.attachments = const [],
   });
 
   @override
   List<Object?> get props =>
-      [providerId, category, description, clientLat, clientLng, offerPrice];
+      [providerId, category, description, clientLat, clientLng, offerPrice, attachments];
 }
 
 final class JobStatusWatchStarted extends JobRequestEvent {

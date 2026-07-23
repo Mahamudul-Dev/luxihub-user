@@ -9,6 +9,7 @@ abstract interface class JobRepository {
     required double clientLat,
     required double clientLng,
     double? offerPrice,
+    List<dynamic> attachments = const [],
   });
 
   Future<List<JobRequest>> getMyJobs(String clientId);

@@ -15,6 +15,7 @@ class JobRepositoryImpl implements JobRepository {
     required double clientLat,
     required double clientLng,
     double? offerPrice,
+    List<dynamic> attachments = const [],
   }) =>
       _dataSource.postJob(
         clientId: clientId,
@@ -24,6 +25,7 @@ class JobRepositoryImpl implements JobRepository {
         clientLat: clientLat,
         clientLng: clientLng,
         offerPrice: offerPrice,
+        attachments: attachments,
       );
 
   @override

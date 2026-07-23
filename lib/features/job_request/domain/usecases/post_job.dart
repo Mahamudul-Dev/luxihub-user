@@ -15,6 +15,7 @@ class PostJob {
         clientLat: params.clientLat,
         clientLng: params.clientLng,
         offerPrice: params.offerPrice,
+        attachments: params.attachments,
       );
 }
 
@@ -26,6 +27,7 @@ class PostJobParams extends Equatable {
   final double clientLat;
   final double clientLng;
   final double? offerPrice;
+  final List<dynamic> attachments;
 
   const PostJobParams({
     required this.clientId,
@@ -35,9 +37,10 @@ class PostJobParams extends Equatable {
     this.clientLat = 0.0,
     this.clientLng = 0.0,
     this.offerPrice,
+    this.attachments = const [],
   });
 
   @override
   List<Object?> get props =>
-      [clientId, providerId, category, description, clientLat, clientLng, offerPrice];
+      [clientId, providerId, category, description, clientLat, clientLng, offerPrice, attachments];
 }

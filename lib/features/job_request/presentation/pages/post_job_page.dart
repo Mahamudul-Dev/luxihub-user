@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -9,6 +11,7 @@ import '../../../../core/routes/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/text_input_field.dart';
 import '../bloc/job_request_bloc.dart';
+import '../widgets/attachment_picker.dart';
 
 class PostJobPage extends StatefulWidget {
   final ServiceProviderEntity provider;
@@ -22,6 +25,7 @@ class _PostJobPageState extends State<PostJobPage> {
   final _formKey = GlobalKey<FormState>();
   final _descController = TextEditingController();
   final _priceController = TextEditingController();
+  final List<File> _attachments = [];
 
   @override
   void dispose() {
@@ -69,6 +73,7 @@ class _PostJobPageState extends State<PostJobPage> {
           clientLat: lat,
           clientLng: lng,
           offerPrice: offerPrice,
+          attachments: _attachments,
         ));
   }
 
@@ -77,7 +82,7 @@ class _PostJobPageState extends State<PostJobPage> {
     return BlocListener<JobRequestBloc, JobRequestState>(
       listener: (context, state) {
         if (state is JobRequestPosted) {
-          context.goNamed(AppRoutes.jobRequestDetails.name, extra: state.job);
+          context.pushReplacementNamed(AppRoutes.jobRequestDetails.name, extra: state.job);
         } else if (state is JobRequestError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -170,6 +175,14 @@ class _PostJobPageState extends State<PostJobPage> {
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.grey.shade600,
                       ),
+                ),
+
+                // Attachment picker
+                AttachmentPicker(
+                  attachments: _attachments,
+                  onChanged: (files) => setState(() => _attachments
+                    ..clear()
+                    ..addAll(files)),
                 ),
 
                 BlocBuilder<JobRequestBloc, JobRequestState>(

@@ -30,6 +30,8 @@ dependencies:
   supabase_flutter: ^2.12.2
   firebase_core: ^3.13.0
   firebase_messaging: ^15.2.5
+  package_rename: ^1.10.1
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -41,3 +43,14 @@ flutter:
 
   assets:
     - assets/images/
+
+package_rename_config:
+  android:
+    app_name: "LuxiHub" # Display name
+    package_name: "com.luxihub.user_app"
+
+  ios:
+    app_name: "LuxiHub" # Display name
+    bundle_name: "LuxiHub" # Bundle name
+    package_name: "com.luxihub.user_app" # Product Bundle Identifier
+  # ... other platforms
