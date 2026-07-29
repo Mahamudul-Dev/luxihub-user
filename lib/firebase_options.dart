@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAD3Hq9b9sOieG3yQshHyCwSMHH-fZ7KJI',
-    appId: '1:244453413198:android:4316205f57fd36578c0e1f',
+    appId: '1:244453413198:android:c32d5dc1991b10e58c0e1f',
     messagingSenderId: '244453413198',
     projectId: 'luxihub-uk',
     storageBucket: 'luxihub-uk.firebasestorage.app',
@@ -59,10 +59,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDre-3Bl7UNum4t2DcVar6h6PCyb_xidSQ',
-    appId: '1:244453413198:ios:f7821f0b3d540fcb8c0e1f',
+    appId: '1:244453413198:ios:c414a15a0be710368c0e1f',
     messagingSenderId: '244453413198',
     projectId: 'luxihub-uk',
     storageBucket: 'luxihub-uk.firebasestorage.app',
-    iosBundleId: 'com.example.luxihubUser',
+    iosBundleId: 'com.luxihub.userapp',
   );
+
 }

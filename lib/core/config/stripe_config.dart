@@ -1,5 +1,5 @@
 class StripeConfig {
   StripeConfig._();
 
-  static const String publishableKey = 'pk_test_51TSW2m4WivoxuvAQV3gGK2MLZiJzdkUuDUkw2NnqFrwqsBKDI5EFN8CL8MfgNftHSyVXQyzei2156yYCdc0NHooV00LwaVvh7N';
+  static const String publishableKey = 'pk_live_51TRc704fPdkvwth4lwRaj4mYjSBCHN5gL78p8EVVv1vaiDEUmClXUTctgABP3Rxf4cmdkzAuKyREfnIf9uN0Pd5x00rVfIZm2Y';
 }

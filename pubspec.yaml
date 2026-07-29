@@ -47,10 +47,10 @@ flutter:
 package_rename_config:
   android:
     app_name: "LuxiHub" # Display name
-    package_name: "com.luxihub.user_app"
+    package_name: "com.luxihub.userapp"
 
   ios:
     app_name: "LuxiHub" # Display name
     bundle_name: "LuxiHub" # Bundle name
-    package_name: "com.luxihub.user_app" # Product Bundle Identifier
+    package_name: "com.luxihub.userapp" # Product Bundle Identifier
   # ... other platforms
