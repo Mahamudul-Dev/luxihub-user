@@ -34,6 +34,11 @@ import '../../features/job_request/domain/usecases/post_job.dart';
 import '../../features/job_request/domain/usecases/save_transaction.dart';
 import '../../features/job_request/domain/usecases/update_job_status.dart';
 import '../../features/job_request/domain/usecases/watch_job_status.dart';
+import '../../features/transactions/data/datasources/transactions_datasource.dart';
+import '../../features/transactions/data/repositories/transactions_repository_impl.dart';
+import '../../features/transactions/domain/repositories/transactions_repository.dart';
+import '../../features/transactions/domain/usecases/get_invoice_pdf.dart';
+import '../../features/transactions/domain/usecases/get_transactions.dart';
 import '../../features/home/data/repository_impl/home_repository_impl.dart';
 import '../../features/home/domain/repository/i_home_repository.dart';
 import '../../features/home/domain/usecase/get_categories_usecase.dart';
@@ -124,6 +129,16 @@ void setupServiceLocator() {
   sl.registerLazySingleton(() => CompleteJob(sl()));
   sl.registerLazySingleton(() => SaveTransaction(sl()));
   sl.registerLazySingleton(() => UpdateJobStatus(sl()));
+
+  // ── Transactions ─────────────────────────────────────────────────────────
+  sl.registerLazySingleton<TransactionsDatasource>(
+    () => TransactionsDatasourceImpl(sl()),
+  );
+  sl.registerLazySingleton<TransactionsRepository>(
+    () => TransactionsRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton(() => GetTransactions(sl()));
+  sl.registerLazySingleton(() => GetInvoicePdf(sl()));
 
   // ── Home ─────────────────────────────────────────────────────────────────
   sl.registerLazySingleton<HomeRemoteDataSource>(

@@ -181,6 +181,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 _InfoTile(icon: Icons.phone_outlined, label: 'Phone', value: profile.phone),
                 _InfoTile(icon: Icons.cake_outlined, label: 'Date of Birth', value: profile.dob),
 
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.receipt_long_outlined, color: AppColors.primary),
+                  title: const Text('Transaction History'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(AppRoutes.transactions.path),
+                ),
+
                 const SizedBox(height: Utils.defaultPadding * 2),
 
                 SizedBox(

@@ -52,6 +52,7 @@ import '../../features/rating_review/presentation/pages/provider_reviews_page.da
 import '../../features/saved_providers/presentation/pages/saved_providers_page.dart';
 import '../../features/service_providers/presentation/bloc/service_provider_bloc.dart';
 import '../../features/service_providers/presentation/pages/service_provider_list_page.dart';
+import '../../features/transactions/presentation/pages/transaction_history_page.dart';
 import '../../features/service_providers/presentation/pages/service_provider_profile_page.dart';
 import '../widgets/error_view.dart';
 
@@ -185,6 +186,11 @@ GoRouter createRouter(AuthBloc authBloc) {
           final job = state.extra as JobRequest;
           return RatingPage(job: job);
         },
+      ),
+      GoRoute(
+        name: AppRoutes.transactions.name,
+        path: AppRoutes.transactions.path,
+        builder: (context, state) => const TransactionHistoryPage(),
       ),
       GoRoute(
         name: AppRoutes.editProfile.name,
